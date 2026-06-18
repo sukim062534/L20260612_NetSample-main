@@ -7,6 +7,9 @@
 #include "Components/TextBlock.h"
 #include "Components/ScrollBox.h"
 #include "Animation/WidgetAnimation.h"
+#include "LobbyPC.h"
+#include "Kismet/GameplayStatics.h"
+#include "LobbyGM.h"
 
 void ULobbyWidgetBase::NativeOnInitialized()
 {
@@ -31,15 +34,48 @@ void ULobbyWidgetBase::NativeOnInitialized()
 
 void ULobbyWidgetBase::PressStart()
 {
+	ALobbyPC* PC = Cast<ALobbyPC>(GetOwningPlayer());
+	if (PC)
+	{
+		PC->ShowLoadingScreen();
+	}
 
+	ALobbyGM* GM = Cast<ALobbyGM>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (GM)
+	{
+		GM->StartGame();
+	}
 }
 
 void ULobbyWidgetBase::PressSend()
 {
+	ALobbyPC* PC = Cast<ALobbyPC>(GetOwningPlayer());
+	if (PC)
+	{
+		PC->C2S_SendMessage(InputText->GetText());
+		InputText->SetText(FText::GetEmpty());
+	}
 }
 
 void ULobbyWidgetBase::PressChatTextEnder(const FText& Text, ETextCommit::Type CommitMethod)
 {
+	ALobbyPC* PC = Cast<ALobbyPC>(GetOwningPlayer());
+	
+	if (!PC)
+	{
+		return;
+	}
+
+	switch (CommitMethod)
+	{
+		case ETextCommit::OnEnter:
+			PC->C2S_SendMessage(Text);
+			InputText->SetText(FText::GetEmpty());
+			break;
+		case ETextCommit::OnCleared:
+			InputText->SetUserFocus(PC);
+			break;
+	}
 }
 
 void ULobbyWidgetBase::ProcessTextChange(const FText& Text)
@@ -65,6 +101,23 @@ void ULobbyWidgetBase::ShowStartButton()
 	{
 		StartButton->SetVisibility(ESlateVisibility::Visible);
 		PlayAnimation(ShowButtonAnimation);
+	}
+}
+
+void ULobbyWidgetBase::AddMessage(const FText& InMessage)
+{
+	if (ChatBox)
+	{
+		UTextBlock* NewText = NewObject<UTextBlock>(ChatBox);
+		NewText->SetText(InMessage);
+
+		auto CurrentFont = NewText->GetFont();
+		CurrentFont.Size = 40;
+
+		NewText->SetFont(CurrentFont);
+
+		ChatBox->AddChild(NewText);
+		ChatBox->ScrollToEnd();
 	}
 }
 

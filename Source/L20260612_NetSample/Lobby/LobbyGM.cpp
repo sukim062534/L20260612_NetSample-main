@@ -16,12 +16,26 @@ void ALobbyGM::BeginPlay()
 			ALobbyGS* GS = GetGameState<ALobbyGS>();
 			if (GS)
 			{
-				GS->LeftTime--; //function();
+				if (GS->LeftTime == 0)
+				{
+					GetWorld()->GetTimerManager().ClearTimer(LeftTimerHandle);
+					StartGame();
+				}
+				{
+					GS->LeftTime--; 
+				}
 			}
 		},
 		1,
 		true
 	);
+
+	ALobbyGS* GS = GetGameState<ALobbyGS>();
+	if (GS)
+	{
+		GS->ConnectionCount = GetNumPlayers();
+		GS->OnRep_ConnectionCount();
+	}
 }
 
 void ALobbyGM::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -39,10 +53,8 @@ void ALobbyGM::PostLogin(APlayerController* NewPlayer)
 	if (GS)
 	{
 		GS->ConnectionCount = GetNumPlayers();
+		GS->OnRep_ConnectionCount();
 	}
-
-	GetNumPlayers();
-
 }
 
 void ALobbyGM::Logout(AController* Exiting)
@@ -55,5 +67,12 @@ void ALobbyGM::Logout(AController* Exiting)
 	if (GS)
 	{
 		GS->ConnectionCount = GetNumPlayers() - 1;
+		GS->OnRep_ConnectionCount();
 	}
+}
+
+void ALobbyGM::StartGame()
+{
+	//Server, GameMode
+	GetWorld()->ServerTravel("InGame");
 }

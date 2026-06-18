@@ -25,8 +25,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<ULobbyWidgetBase> LobbyWidgetObject;
 
-	UPROPERTY()
-	TObjectPtr<UPlayer> Player;
 
 
 };
